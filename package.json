@@ -1,5 +1,0 @@
-{ "name" : "BasilBot"
-, "version" : "1.0.0"
-, "description" : "A discord bot test."
-, "main" : "BasilBot.js"
-}
