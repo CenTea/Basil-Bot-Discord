@@ -1,0 +1,19 @@
+{
+  "name": "BasilBot",
+  "version": "1.0.1",
+  "description": "A bot for Discord",
+  "readme": "README.md",
+  "author": "Cen",
+  "keywords": [
+    "discord",
+    "bot",
+    "discordapp"
+  ],
+  "main": "BasilBot.js",
+  "dependencies": {
+    "discord.js": "^9.3.0",
+    "ytdl-core": "0.18.5",
+    "node-opus": "^0.2.6",
+    "bufferutil": "^3.0.2"
+  }
+}
