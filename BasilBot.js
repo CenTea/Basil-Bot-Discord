@@ -1,17 +1,38 @@
 // Import the discord.js module
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
+const nodeopus = require('node-opus');
 
 //Vars
 
+// Create an instance of a Discord client
+const client = new Discord.Client();
+
+// The token of your bot - https://discordapp.com/developers/applications/me
+const token = process.env.BASIL_TOKEN;
+
 const curses = ['fucking','fuck','fucked','shit','bitch'];
 const prefix = 'Basil';
+var pick = [];
+
+// Planned closeness levels.
+// >-100 - 200, 201 - 600, 601 - 1000+ 
+
 
 //functions
 
 function at(message)
 {
 	return '<@'+message.member.id + '> ';
+}
+
+function imageresp(message, image, title, desc)
+{
+	const embed = new Discord.RichEmbed()
+		.setTitle(title)
+		.setDescription(desc)
+		.setImage(image);
+	return {embed : embed};
 }
 
 function filter(message, cursearray)
@@ -23,17 +44,15 @@ function filter(message, cursearray)
 	{
 		if (stringer.includes(cursearray[i]))
 		{
-			message.channel.sendMessage('No Swearing! '+ at(message)+'Swearing is bad!\n' + 'http://i0.kym-cdn.com/photos/images/original/001/237/094/21c.jpg\n' + pooresp[Math.floor(Math.random()*pooresp.length)] );
+			message.channel.send('No Swearing! '+ at(message) + '\nThe message has been deleted.');
+			message.channel.send(imageresp(message,'http://i0.kym-cdn.com/photos/images/original/001/237/094/21c.jpg', 'Swearing is bad!', pooresp[Math.floor(Math.random()*pooresp.length)]) );
+			message.delete();
 			break;
 		}
 	}
 }
 
-// Create an instance of a Discord client
-const client = new Discord.Client();
 
-// The token of your bot - https://discordapp.com/developers/applications/me
-const token = process.env.BASIL_TOKEN;
 
 // The ready event is vital, it means that your bot will only start reacting to information
 // from Discord _after_ ready is emitted
@@ -44,7 +63,8 @@ client.on('ready', () => {
 // Create an event listener for messages
 client.on('message', message => {
 
-
+if (message.author.username != 'Basil Hem')
+{//ifnotbasil
   console.log(message.content);
   filter(message, curses);
   const args = message.content.slice(0,5);
@@ -53,10 +73,38 @@ client.on('message', message => {
 {//startif
 
   const command = message.content.slice(5).trim().toLowerCase();
-  
- 
   console.log('command: '+ command);
+
   switch(command){
+	case 'addme': case 'add me':
+		if (pick.indexOf(at(message))==-1)
+		{
+			pick.push(at(message));
+			message.reply('Added!');
+		}
+		else
+		{
+			message.reply('No.');
+		}
+		break;
+	case 'pick': case 'pickone': case 'pickme': case 'pick one': case 'pick me':
+		if (pick.length > 0)
+		{
+			message.channel.send(pick[Math.floor(Math.random()*pick.length)] + 'was chosen.');
+		}
+		break;
+	case 'removeme': case 'remove me':
+		const index = pick.indexOf(at(message));
+		if (pick.indexOf(at(message)) !== -1)
+		{
+			pick.splice(index, 1);
+			message.reply('Removed.');
+		}
+		else
+		{
+			message.reply('No.');
+		}
+		break;
 	case 'whoareyou':case 'who are you':
 		message.reply('I am Basil Hem! Still in progress!\n');
 		break;
@@ -67,12 +115,16 @@ client.on('message', message => {
 		break;
 	case '?':
 		var resp = ['Did you call for me?', 'Is someone calling me?', 'Did someone say my name?', 'Is there something wrong?', 'Did I do something?']
-		message.channel.sendMessage(resp[Math.floor(Math.random()*resp.length)]);
+		message.channel.send(resp[Math.floor(Math.random()*resp.length)]);
+		break;
+	default:
+		message.channel.send('Yay!');
 		break;
 	}
 
-}//endif
 
+}//endif
+}//endnotbasil
 });
 
 // Log our bot in
