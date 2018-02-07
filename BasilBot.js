@@ -11,7 +11,7 @@ const client = new Discord.Client();
 // The token of your bot - https://discordapp.com/developers/applications/me
 const token = process.env.BASIL_TOKEN;
 
-const curses = ['fucking','fuck','fucked','shit','bitch'];
+const curses = ['fucking','fuck','fucked','fck','fkc','shit','bitch'];
 const prefix = 'Basil';
 var pick = [];
 
@@ -52,8 +52,6 @@ function filter(message, cursearray)
 	}
 }
 
-
-
 // The ready event is vital, it means that your bot will only start reacting to information
 // from Discord _after_ ready is emitted
 client.on('ready', () => {
@@ -72,10 +70,44 @@ if (message.author.username != 'Basil Hem')
   if (args.toLowerCase() == 'basil')
 {//startif
 
-  const command = message.content.slice(5).trim().toLowerCase();
+  var command = message.content.slice(5).trim().split(" ");
   console.log('command: '+ command);
 
-  switch(command){
+  switch(command[0].toLowerCase()){
+	case 'exit':
+		try{
+		message.member.voiceChannel.leave();
+		}catch (err){
+		}
+		console.log('Exiting!');
+		message.channel.send('Exiting~');
+		break;
+	case 'play':
+		const channel = message.member.voiceChannel;
+		if (channel)
+		{
+			channel.join();
+			const streamOptions = { seek: 0, volume: 1 };
+		try{
+			const stream = ytdl(command[1], { filter : 'audioonly' });
+			const dispatcher = channel.connection.playStream(stream, streamOptions);
+			message.channel.send('Playing~');
+		dispatcher.on('error', console.error);
+        	dispatcher.on("end", end => {
+          		message.channel.send("Request Complete~");
+		}); // end dispatcher
+
+		}catch(err){
+			console.log(err);
+			message.channel.send("URL Error!");
+		} // end try-catch
+
+		} // end if
+		else 
+		{
+			message.reply('Channel?');
+		} // end else
+		break;
 	case 'addme': case 'add me':
 		if (pick.indexOf(at(message))==-1)
 		{
@@ -113,12 +145,9 @@ if (message.author.username != 'Basil Hem')
 		var addon = ['Did you fall down and hit your head? I hope you\'re alright.', 'Did you really need to ask?']
 		message.reply(response+addon[Math.floor(Math.random()*addon.length)]);
 		break;
-	case '?':
-		var resp = ['Did you call for me?', 'Is someone calling me?', 'Did someone say my name?', 'Is there something wrong?', 'Did I do something?']
+	case '?': case '':
+		var resp = ['Did you call for me?', 'Is someone calling me?', 'Did someone say my name?', 'Is there something wrong?', 'Did I do something?','Yay!?']
 		message.channel.send(resp[Math.floor(Math.random()*resp.length)]);
-		break;
-	default:
-		message.channel.send('Yay!');
 		break;
 	}
 
