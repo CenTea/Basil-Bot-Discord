@@ -14,6 +14,7 @@ const token = process.env.BASIL_TOKEN;
 const curses = ['fucking','fuck','fucked','fck','fkc','shit','bitch'];
 const prefix = 'Basil';
 var pick = [];
+var dispatcher = null;
 
 // Planned closeness levels.
 // >-100 - 200, 201 - 600, 601 - 1000+ 
@@ -74,6 +75,17 @@ if (message.author.username != 'Basil Hem')
   console.log('command: '+ command);
 
   switch(command[0].toLowerCase()){
+	case 'addme': case 'add me':
+		if (pick.indexOf(at(message))==-1)
+		{
+			pick.push(at(message));
+			message.reply('Added!');
+		}
+		else
+		{
+			message.reply('No.');
+		}
+		break;
 	case 'exit':
 		try{
 		message.member.voiceChannel.leave();
@@ -81,6 +93,26 @@ if (message.author.username != 'Basil Hem')
 		}
 		console.log('Exiting!');
 		message.channel.send('Exiting~');
+		break;
+	case 'hi': case 'hello':
+		message.reply('Hi~');
+		break;
+	case 'pause':
+		if (dispatcher == null)
+		{
+			message.channel.send('Nothing is playing?');
+		}
+		else
+		{
+			dispatcher.pause();
+			message.channel.send('Paused~');
+		}
+		break;
+	case 'pick': case 'pickone': case 'pickme': case 'pick one': case 'pick me':
+		if (pick.length > 0)
+		{
+			message.channel.send(pick[Math.floor(Math.random()*pick.length)] + 'was chosen.');
+		}
 		break;
 	case 'play':
 		const channel = message.member.voiceChannel;
@@ -90,11 +122,12 @@ if (message.author.username != 'Basil Hem')
 			const streamOptions = { seek: 0, volume: 1 };
 		try{
 			const stream = ytdl(command[1], { filter : 'audioonly' });
-			const dispatcher = channel.connection.playStream(stream, streamOptions);
+			dispatcher = channel.connection.playStream(stream, streamOptions);
 			message.channel.send('Playing~');
 		dispatcher.on('error', console.error);
         	dispatcher.on("end", end => {
           		message.channel.send("Request Complete~");
+			dispatcher = null;
 		}); // end dispatcher
 
 		}catch(err){
@@ -108,23 +141,6 @@ if (message.author.username != 'Basil Hem')
 			message.reply('Channel?');
 		} // end else
 		break;
-	case 'addme': case 'add me':
-		if (pick.indexOf(at(message))==-1)
-		{
-			pick.push(at(message));
-			message.reply('Added!');
-		}
-		else
-		{
-			message.reply('No.');
-		}
-		break;
-	case 'pick': case 'pickone': case 'pickme': case 'pick one': case 'pick me':
-		if (pick.length > 0)
-		{
-			message.channel.send(pick[Math.floor(Math.random()*pick.length)] + 'was chosen.');
-		}
-		break;
 	case 'removeme': case 'remove me':
 		const index = pick.indexOf(at(message));
 		if (pick.indexOf(at(message)) !== -1)
@@ -135,6 +151,17 @@ if (message.author.username != 'Basil Hem')
 		else
 		{
 			message.reply('No.');
+		}
+		break;
+	case 'resume':
+		if (dispatcher == null)
+		{
+			message.channel.send('Nothing is playing?');
+		}
+		else
+		{
+			dispatcher.resume();
+			message.channel.send('Go~');
 		}
 		break;
 	case 'whoareyou':case 'who are you':
