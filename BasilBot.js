@@ -92,6 +92,7 @@ function pinfo(message)
 
 function infocheck(url)
 {
+
 	ytdl.getInfo(url,{}, function(err,info)
 	{
 	var minutes = Math.floor(info.length_seconds/60);
@@ -122,7 +123,6 @@ function play(message, url)
 		try{
 			const stream = ytdl(url, { filter : 'audioonly' });
 			dispatcher = channel.connection.playStream(stream, streamOptions);
-			stinfo(message, "~Currently Playing~");
 			dispatcher.on('error', console.error);
 		}catch(err){
 			console.log(err);
@@ -141,16 +141,23 @@ function play(message, url)
 		} // end else
 
 		dispatcher.once("end", end => {
+			console.log("Before end:\n" + stringy[0]);
 			if (end == "skip")
 			{
-			stinfo(message, "~Skipped~");
+			setTimeout(function(){ stinfo(message, "~Skipped~"); }, 500);
 			}
 			else
 			{
-			stinfo(message, "~Just Ended~");
+			setTimeout(function(){ stinfo(message, "~Just Ended~"); },500);
 			}
-			playqueue();
-			console.log("Normies");
+
+			if (dispatcher!=null)
+			{
+				setTimeout(function(){dequeue();}, 1000);
+			}
+
+			dispatcher = null;
+			setTimeout(function(){ playqueue(); }, 2000);
 		}); // end dispatcher
 
 }
@@ -159,7 +166,18 @@ function enqueue(url, message)
 {
 	playlist.push(url);
 	mob.push(message);
+
+	try{
 	infocheck(url);
+	}catch(err){
+	console.log(err);
+	message.channel.send("No.");
+	if (playlist.length>0)
+	{
+		dequeue();
+	}
+	}
+
 	console.log(playlist.length);
 }
 
@@ -174,12 +192,8 @@ function playqueue()
 {
 	if (playlist.length>0)
 	{
+	setTimeout(function(){stinfo(mob[0], "~Currently Playing~"); }, 1000);
 	play(mob[0],playlist[0]);
-
-	if (dispatcher!=null)
-	{
-		dequeue();
-	}
 	}
 }
 
@@ -224,7 +238,6 @@ if (message.author.username != 'Basil Hem')
 		}
 		else
 		{
-			dispatcher.pause();
 			dispatcher.end("skip");
 		}
 		dispatcher = null;
@@ -342,6 +355,10 @@ if (message.author.username != 'Basil Hem')
 	case '?': case '':
 		var resp = ['Did you call for me?', 'Is someone calling me?', 'Did someone say my name?', 'Is there something wrong?', 'Did I do something?','Yay!?']
 		message.channel.send(resp[Math.floor(Math.random()*resp.length)]);
+		break;
+	default:
+		var iresp = ['Huh?', 'Is that rock larvae speak?']
+		message.channel.send(iresp[Math.floor(Math.random()*iresp.length)]);
 		break;
 	}
 
