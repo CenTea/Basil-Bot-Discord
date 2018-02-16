@@ -18,6 +18,8 @@ dispatcher = null;
 playlist = [];
 mob = [];
 
+stringy = [];//tester
+
 //
 // Planned closeness levels.
 // >-100 - 200, 201 - 600, 601 - 1000+ 
@@ -39,6 +41,14 @@ function imageresp(message, image, title, desc)
 	return {embed : embed};
 }
 
+function embresp(message, title, desc)
+{
+	const embed = new Discord.RichEmbed()
+		.setTitle(title)
+		.setDescription(desc)
+	return {embed : embed};
+}
+
 function filter(message, cursearray)
 {
 	var stringer = message.content.toLowerCase();
@@ -57,6 +67,51 @@ function filter(message, cursearray)
 	}
 }
 
+function stinfo(message, text)
+{
+	var ytemp = stringy[0];
+	if (ytemp != undefined)
+	{
+	message.channel.send(embresp(message, text, ytemp));
+	}
+	else
+	{
+	message.channel.send(embresp(message, text, "Meeeeeeeehhh, You already know the name of it"));
+	}
+}
+
+function pinfo(message)
+{
+	var xtemp = "";
+	for (var i = 0; i<playlist.length; i++)
+	{
+		xtemp += stringy[i];
+	}
+	message.channel.send(embresp(message, "Songs Currently in Queue", xtemp));
+}
+
+function infocheck(url)
+{
+	ytdl.getInfo(url,{}, function(err,info)
+	{
+	var minutes = Math.floor(info.length_seconds/60);
+ 	var seconds = info.length_seconds%60;
+	stringy.push(info.title + "\nDuration of Song: " + minutes + ":"+seconds +"\n");
+	});
+}
+
+function printqueue(message)
+{
+	if (playlist.length>0)
+	{
+		pinfo(message);
+	}
+	else
+	{
+	message.channel.send("The queue may be empty.");
+	}
+}
+
 function play(message, url)
 {
 		const channel = message.member.voiceChannel;
@@ -67,12 +122,8 @@ function play(message, url)
 		try{
 			const stream = ytdl(url, { filter : 'audioonly' });
 			dispatcher = channel.connection.playStream(stream, streamOptions);
-			message.reply('Basil is Playing!~');
-		dispatcher.on('error', console.error);
-		dispatcher.on("end", end => {
-			message.reply("Basil has completed your request!~");
-			playqueue();
-		}); // end dispatcher
+			stinfo(message, "~Currently Playing~");
+			dispatcher.on('error', console.error);
 		}catch(err){
 			console.log(err);
 			message.channel.send("URL Error!");
@@ -83,22 +134,40 @@ function play(message, url)
 		} // end try-catch
 
 		} // end if
+
 		else 
 		{
 			message.reply('Channel?');
 		} // end else
+
+		dispatcher.once("end", end => {
+			if (end == "skip")
+			{
+			stinfo(message, "~Skipped~");
+			}
+			else
+			{
+			stinfo(message, "~Just Ended~");
+			}
+			playqueue();
+			console.log("Normies");
+		}); // end dispatcher
+
 }
 
 function enqueue(url, message)
 {
 	playlist.push(url);
 	mob.push(message);
+	infocheck(url);
+	console.log(playlist.length);
 }
 
 function dequeue()
 {
 	playlist.shift();
 	mob.shift();
+	stringy.shift();
 }
 
 function playqueue()
@@ -106,12 +175,17 @@ function playqueue()
 	if (playlist.length>0)
 	{
 	play(mob[0],playlist[0]);
-	dequeue();
+
+	if (dispatcher!=null)
+	{
+		dequeue();
+	}
 	}
 }
 
 // The ready event is vital, it means that your bot will only start reacting to information
 // from Discord _after_ ready is emitted
+
 client.on('ready', () => {
   console.log('I am ready!');
 });
@@ -143,7 +217,7 @@ if (message.author.username != 'Basil Hem')
 			message.reply('No.');
 		}
 		break;
-	case 'end': case 'stop': case 'next':
+	case 'end': case 'stop': case 'next': case 'skip':
 		if (dispatcher == null)
 		{
 			message.channel.send('Nothing is playing?');
@@ -151,16 +225,19 @@ if (message.author.username != 'Basil Hem')
 		else
 		{
 			dispatcher.pause();
-			dispatcher.end();
+			dispatcher.end("skip");
 		}
+		dispatcher = null;
 		break;
 	case 'exit':
 		try{
 		message.member.voiceChannel.leave();
-		}catch (err){
-		}
 		console.log('Exiting!');
 		message.channel.send('Exiting~');
+		dispatcher = null;
+		}catch (err){
+		message.reply('Nope~');
+		}
 		break;
 	case 'hi': case 'hello':
 		message.reply('Hi~');
@@ -182,6 +259,19 @@ if (message.author.username != 'Basil Hem')
 			message.channel.send(pick[Math.floor(Math.random()*pick.length)] + 'was chosen.');
 		}
 		break;
+	case 'pq':
+		{
+			printqueue(message);
+		break;
+		}
+	case 'purge':
+		{
+			playlist = [];
+			mob = [];
+			stringy = [];
+			message.reply('Purged!');
+		break;
+		}
 	case 'queue':case 'q':
 		if (command[1] != undefined)
 		{
@@ -194,20 +284,28 @@ if (message.author.username != 'Basil Hem')
 		}
 		break;
 	case 'play':
-		if (command[1] != undefined)
+		if (dispatcher != null)
 		{
-		play(message, command[1]);
+			message.channel.send('Something is already playing?');
 		}
 		else
 		{
-			if (playlist.length>0)
+			if (command[1] != undefined)
 			{
-			playqueue();
+				enqueue(command[1], message);
+				playqueue();
 			}
 			else
 			{
-			message.channel.send('The playlist seems to be empty.');
-			}
+				if (playlist.length>0)
+				{
+					playqueue();
+				}
+				else
+				{
+					message.channel.send('The playlist seems to be empty.');
+				}
+		}
 		}
 		break;
 	case 'removeme': case 'remove me':
