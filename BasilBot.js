@@ -1,4 +1,4 @@
-// Import the discord.js module
+﻿// Import the discord.js module
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
 const nodeopus = require('node-opus');
@@ -13,16 +13,12 @@ const token = process.env.BASIL_TOKEN;
 
 const curses = ['fucking','fuck','fucked','fck','fkc','shit','bitch'];
 const prefix = 'Basil';
-var pick = [];
+serverlist = [];
 dispatcher = null;
 playlist = [];
 mob = [];
 
 stringy = [];//tester
-
-//
-// Planned closeness levels.
-// >-100 - 200, 201 - 600, 601 - 1000+ 
 
 
 //functions
@@ -51,10 +47,13 @@ function embresp(message, title, desc)
 
 function filter(message, cursearray)
 {
-	var stringer = message.content.toLowerCase();
+	var splitted = message.content.toLowerCase().split(" ");
+	var stringer = splitted.join();
+	stringer = stringer.replace(/[^A-Za-z]/g,'');
+
 	var pooresp = ['Poo states: I will come for you at night!', 'Poo calmly stares and smiles at ' + at(message) , 'Poo grins at ' + at(message) , 'Poo winks at ' + at(message), 'Poo flexes'];
-	var cursechange = ['Oh Flowerbeds!', 'By the great pixie dust!', 'Ghost Signals!', 'Bloody Cheek!', 'Wanking Peeker!', 'If it not be Bone Storm!'];
-	for (i = 0; i <	cursearray.length ; i++)
+	var cursechange = ['Oh Flowerbeds!', 'By the great pixie dust!', 'Ghost Signals!', 'Bloody Cheek!', 'Wanking Peeker!', 'If it not be Bone Storm!', '┌（┌ ＾o＾）┐ ~ ホモォ ~ '];
+	for (var i = 0; i <cursearray.length ; i++)
 	{
 		if (stringer.includes(cursearray[i]))
 		{
@@ -87,7 +86,7 @@ function pinfo(message)
 	{
 		xtemp += stringy[i];
 	}
-	message.channel.send(embresp(message, "Songs Currently in Queue", xtemp));
+	message.channel.send(embresp(message, "Songs Currently in Queue : "+playlist.length, xtemp));
 }
 
 function infocheck(url)
@@ -97,7 +96,7 @@ function infocheck(url)
 	{
 	var minutes = Math.floor(info.length_seconds/60);
  	var seconds = info.length_seconds%60;
-	stringy.push(info.title + "\nDuration of Song: " + minutes + ":"+seconds +"\n");
+	stringy.push(info.title + "\nDuration of Song: " + minutes + ":"+((seconds<10) ? "0"+seconds : seconds) +"\n");
 	});
 }
 
@@ -210,7 +209,16 @@ client.on('message', message => {
 if (message.author.username != 'Basil Hem')
 {//ifnotbasil
   console.log(message.content);
+
+for (var i = 0; i<serverlist.length; i++)
+{
+  if (message.guild == serverlist[i])
+  {
   filter(message, curses);
+  break;
+  }
+}
+
   const args = message.content.slice(0,5);
   console.log(args);
   if (args.toLowerCase() == 'basil')
@@ -220,17 +228,6 @@ if (message.author.username != 'Basil Hem')
   console.log('command: '+ command);
 
   switch(command[0].toLowerCase()){
-	case 'addme': case 'add me':
-		if (pick.indexOf(at(message))==-1)
-		{
-			pick.push(at(message));
-			message.reply('Added!');
-		}
-		else
-		{
-			message.reply('No.');
-		}
-		break;
 	case 'end': case 'stop': case 'next': case 'skip':
 		if (dispatcher == null)
 		{
@@ -264,12 +261,6 @@ if (message.author.username != 'Basil Hem')
 		{
 			dispatcher.pause();
 			message.channel.send('Paused~');
-		}
-		break;
-	case 'pick': case 'pickone': case 'pickme': case 'pick one': case 'pick me':
-		if (pick.length > 0)
-		{
-			message.channel.send(pick[Math.floor(Math.random()*pick.length)] + 'was chosen.');
 		}
 		break;
 	case 'pq':
@@ -321,18 +312,6 @@ if (message.author.username != 'Basil Hem')
 		}
 		}
 		break;
-	case 'removeme': case 'remove me':
-		const index = pick.indexOf(at(message));
-		if (pick.indexOf(at(message)) !== -1)
-		{
-			pick.splice(index, 1);
-			message.reply('Removed.');
-		}
-		else
-		{
-			message.reply('No.');
-		}
-		break;
 	case 'resume':
 		if (dispatcher == null)
 		{
@@ -342,6 +321,43 @@ if (message.author.username != 'Basil Hem')
 		{
 			dispatcher.resume();
 			message.channel.send('Go~');
+		}
+		break;
+	case 'startfilter': case 'start filter':
+		if (message.member.id == "242005625377128448")
+		{
+			if (!serverlist.includes(message.guild))
+			{
+			serverlist.push(message.guild);
+			message.reply('Okay! Implementing POO System~');
+			}
+			else
+			{
+			message.reply('I believe POO is already active.');
+			}
+		}
+		else
+		{
+			message.reply('Unauthorized.');
+		}
+		break;
+	case 'stopfilter': case 'stop filter':
+		if (message.member.id == "242005625377128448")
+		{
+		const index = serverlist.indexOf(message.guild);
+		if (serverlist.indexOf(message.guild) !== -1)
+			{
+			serverlist.splice(index, 1);
+			message.reply('Okay! Removing POO System~');
+			}
+		else
+			{
+			message.reply('POO is not active in this server.');
+			}
+		}
+		else
+		{
+			message.reply('Unauthorized.');
 		}
 		break;
 	case 'whoareyou':case 'who are you':
@@ -357,7 +373,7 @@ if (message.author.username != 'Basil Hem')
 		message.channel.send(resp[Math.floor(Math.random()*resp.length)]);
 		break;
 	default:
-		var iresp = ['Huh?', 'Is that rock larvae speak?']
+		var iresp = ['Huh?', 'Is that rock larvae speak?', 'Talking like the Crux?', 'Imitating the Avarice?', 'Do you work for the THICC store or something?']
 		message.channel.send(iresp[Math.floor(Math.random()*iresp.length)]);
 		break;
 	}
