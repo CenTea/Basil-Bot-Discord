@@ -12,3 +12,6 @@ Due to large issues with the intial design of bot, it is undergoing a rework. Th
 
 FEB 15 UPDATE:
 As of now, Basil has a simple filtering system and a simple play feature. Queueing still needs work as skipping causes the .end() to run twice.
+
+MAR 12 UPDATE:
+Basil can now somewhat Queue and Skip due to the delay added. Filtering System updated. As Basil is being tested on two servers. Music Playlist will need to be tested. Basil will most likely be unable to support two servers playing music due to the way it is coded. Will work on it in a future update.
