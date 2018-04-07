@@ -3,16 +3,108 @@ const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
 const nodeopus = require('node-opus');
 
-//Vars
+const PostGre = require('pg');
 
 // Create an instance of a Discord client
 const client = new Discord.Client();
 
+
+// PostGre Section
+
+const pgre = new PostGre.Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: true,
+});
+pgre.connect();
+
+console.log("PG running");
+
+function addfilter(message)
+{
+pgre.query('UPDATE filter SET status = \'true\' WHERE GID = (SELECT GID FROM serverGuild WHERE GName = \''+message.guild+'\');');
+pgre.query('SELECT status FROM filter WHERE GID = (SELECT GID FROM serverGuild WHERE GName = \''+message.guild+'\');', (err, res) => {
+  if (err) throw err;
+if (JSON.stringify(res.rows[0]) == undefined)
+	{
+	pgre.query('INSERT INTO filter (GID, status) VALUES ((SELECT GID FROM serverGuild WHERE GName = \''+message.guild+'\'),\'true\');');
+	console.log('Added: '+message.guild);
+	}
+else
+	{
+	console.log('Updated: '+message.guild);
+	}
+});
+}
+
+function remfilter(message)
+{
+pgre.query('UPDATE filter SET status = \'false\' WHERE GID = (SELECT GID FROM serverGuild WHERE GName = \''+message.guild+'\');');
+pgre.query('SELECT status FROM filter WHERE GID = (SELECT GID FROM serverGuild WHERE GName = \''+message.guild+'\');', (err, res) => {
+  if (err) throw err;
+console.log(res.rows);
+if (JSON.stringify(res.rows) == undefined)
+	{
+	pgre.query('INSERT INTO filter (GID, status) VALUES ((SELECT GID FROM serverGuild WHERE GName = \''+message.guild+'\'),\'false\');');
+	console.log('Removed: '+message.guild);
+	}
+else
+	{
+	console.log('Updated: '+message.guild);
+	}
+});
+}
+
+
+function getfilter(message)
+{
+pgre.query('SELECT status FROM filter WHERE GID = (SELECT GID FROM serverGuild WHERE GName = \''+message.guild+'\');', (err, res) => {
+  if (err) throw err;
+//console.log(JSON.stringify(res.rows[0].status).replace(/"/g,'').trim() == 'true');
+if (res.rows[0] != undefined && res.rows[0].status == true)
+{
+	filter(message, curses);
+}
+});
+}
+
+function CT()
+{
+try{
+pgre.query('CREATE TABLE serverGuild (GID varchar(40), GName varchar(40));', (err)=> {if (err) console.log('serverGuild Exists');});
+pgre.query('CREATE TABLE queue (GID varchar(40), queue text[]);', (err)=> {if (err) console.log('queue Exists');});
+pgre.query('CREATE TABLE filter (GID varchar(40), status boolean);', (err)=> {if (err) console.log('filter Exists');});
+}catch(err){console.log('Tables Exist');}
+}
+
+function insertCheck(message)
+{
+	try{
+pgre.query('SELECT GID FROM serverGuild WHERE GName = \''+message.guild+'\';', (err, res) => {
+  	if (err) throw err;
+	if (res.rows[0] == undefined)
+	{
+		printtest(message);
+		remfilter(message);
+	}
+});
+}catch(err){}
+}
+
+function printtest(message)
+{
+	console.log('PTest:' + message.guild);
+try{
+pgre.query('INSERT INTO serverGuild (GID, GName) VALUES (\''+message.guild.id+'\',\''+message.guild+'\');');
+}catch(err){console.log(err);}
+}
+
 // The token of your bot - https://discordapp.com/developers/applications/me
+
 const token = process.env.BASIL_TOKEN;
 
 const curses = ['fucking','fuck','fucked','fck','fkc','shit','bitch'];
 const prefix = 'Basil';
+table = false;
 serverlist = [];
 dispatcher = null;
 playlist = [];
@@ -195,12 +287,14 @@ function playqueue()
 	play(mob[0],playlist[0]);
 	}
 }
-
 // The ready event is vital, it means that your bot will only start reacting to information
 // from Discord _after_ ready is emitted
 
 client.on('ready', () => {
   console.log('I am ready!');
+	try{
+		CT();
+	}catch(err){}
 });
 
 // Create an event listener for messages
@@ -209,18 +303,9 @@ client.on('message', message => {
 if (message.author.username != 'Basil Hem')
 {//ifnotbasil
   console.log(message.content);
-
-for (var i = 0; i<serverlist.length; i++)
-{
-  if (message.guild == serverlist[i])
-  {
-  filter(message, curses);
-  break;
-  }
-}
-
+   insertCheck(message);
   const args = message.content.slice(0,5);
-  console.log(args);
+  //console.log(args);
   if (args.toLowerCase() == 'basil')
 {//startif
 
@@ -326,15 +411,8 @@ for (var i = 0; i<serverlist.length; i++)
 	case 'startfilter': case 'start filter':
 		if (message.member.id == "242005625377128448")
 		{
-			if (!serverlist.includes(message.guild))
-			{
-			serverlist.push(message.guild);
-			message.reply('Okay! Implementing POO System~');
-			}
-			else
-			{
-			message.reply('I believe POO is already active.');
-			}
+		addfilter(message);
+		message.reply('Checking POO System~');
 		}
 		else
 		{
@@ -344,16 +422,8 @@ for (var i = 0; i<serverlist.length; i++)
 	case 'stopfilter': case 'stop filter':
 		if (message.member.id == "242005625377128448")
 		{
-		const index = serverlist.indexOf(message.guild);
-		if (serverlist.indexOf(message.guild) !== -1)
-			{
-			serverlist.splice(index, 1);
-			message.reply('Okay! Removing POO System~');
-			}
-		else
-			{
-			message.reply('POO is not active in this server.');
-			}
+		remfilter(message);
+		message.reply('Adjusting POO System~');
 		}
 		else
 		{
@@ -378,8 +448,10 @@ for (var i = 0; i<serverlist.length; i++)
 		break;
 	}
 
-
 }//endif
+
+getfilter(message);
+
 }//endnotbasil
 });
 
